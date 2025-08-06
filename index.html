@@ -135,14 +135,17 @@
     let repCounts = {
       "Push-ups": 0,
       "Sit-ups": 0,
-      "Squats": 0
+      "Squats": 0,
+      "Plank": 0
     };
     let currentExercise = "";
     let currentReps = 0;
     let round = 0;
 
+    const plankDurations = [30, 60, 90, 120, 150];
+
     function getRandomExercise() {
-      const exercises = ["Push-ups", "Sit-ups", "Squats"];
+      const exercises = ["Push-ups", "Sit-ups", "Squats", "Plank"];
       return exercises[Math.floor(Math.random() * exercises.length)];
     }
 
@@ -154,11 +157,25 @@
       const min = parseInt(document.getElementById("minReps").value);
       const max = parseInt(document.getElementById("maxReps").value);
       currentExercise = getRandomExercise();
-      currentReps = getRandomReps(min, max);
-      repCounts[currentExercise] += currentReps;
+      let displayText = "";
+
+      if (currentExercise === "Plank") {
+        currentReps = plankDurations[Math.floor(Math.random() * plankDurations.length)];
+        repCounts["Plank"] += currentReps;
+        let mins = Math.floor(currentReps / 60);
+        let secs = currentReps % 60;
+        let timeStr = mins > 0 ? `${mins} min${mins > 1 ? 's' : ''}` : "";
+        timeStr += secs > 0 ? `${timeStr ? ' ' : ''}${secs} sec${secs > 1 ? 's' : ''}` : "";
+        displayText = `Plank: Hold for ${timeStr}`;
+      } else {
+        currentReps = getRandomReps(min, max);
+        repCounts[currentExercise] += currentReps;
+        displayText = `${currentExercise}: ${currentReps} reps`;
+      }
+
       round++;
       document.getElementById("roundCounter").textContent = `Round ${round}:`;
-      document.getElementById("exercise").textContent = `${currentExercise}: ${currentReps} reps`;
+      document.getElementById("exercise").textContent = displayText;
       document.getElementById("exercise").classList.add("alert");
       setTimeout(() => {
         document.getElementById("exercise").classList.remove("alert");
@@ -175,7 +192,7 @@
       if (isRunning || isPaused) return;
       isRunning = true;
       round = 0;
-      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0 };
+      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0, "Plank": 0 };
       document.getElementById("settings").style.display = "none";
       document.getElementById("startButton").style.display = "none";
       document.getElementById("pauseButton").style.display = "inline-block";
@@ -217,7 +234,14 @@
 
       let summary = `Workout Completed, Great Job!!\n\nTotal Rounds: ${round}\n`;
       for (const [exercise, count] of Object.entries(repCounts)) {
-        summary += `${exercise}: ${count} reps\n`;
+        if (exercise === "Plank") {
+          const mins = Math.floor(count / 60);
+          const secs = count % 60;
+          const timeStr = `${mins} min${mins !== 1 ? 's' : ''} ${secs} sec${secs !== 1 ? 's' : ''}`.trim();
+          summary += `${exercise}: ${timeStr}\n`;
+        } else {
+          summary += `${exercise}: ${count} reps\n`;
+        }
       }
       document.getElementById("exercise").textContent = summary;
       document.getElementById("timer").textContent = "";
@@ -229,7 +253,7 @@
       isPaused = false;
       timeRemaining = 0;
       round = 0;
-      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0 };
+      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0, "Plank": 0 };
 
       document.getElementById("settings").style.display = "block";
       document.getElementById("startButton").style.display = "inline-block";
