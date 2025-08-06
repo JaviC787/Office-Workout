@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Office Workout</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-image: url("Images/background.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      text-shadow: 1px 1px 4px #000;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #timer {
+      font-size: 28px;
+      margin: 10px 0;
+    }
+    #roundCounter {
+      font-size: 20px;
+      margin: 5px 0;
+    }
+    #exercise {
+      font-size: 22px;
+      margin: 10px 0;
+      white-space: pre-line;
+    }
+    select {
+      margin: 10px;
+      padding: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    .start { background-color: #28a745; color: white; }
+    .pause { background-color: #ffc107; color: black; }
+    .stop { background-color: #dc3545; color: white; }
+    .reset { background-color: #007bff; color: white; }
+    .alert {
+      animation: flash 1s ease-in-out;
+    }
+    @keyframes flash {
+      0% { background-color: transparent; }
+      50% { background-color: rgba(255, 255, 0, 0.5); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Office Workout</h1>
+    <div id="timer"></div>
+    <div id="roundCounter"></div>
+
+    <div id="settings">
+      <div>
+        <label for="intervalSelect">Randomize Exercise and Reps every:</label>
+        <select id="intervalSelect">
+          <option value="60">1 minute</option>
+          <option value="600">10 minutes</option>
+          <option value="1200">20 minutes</option>
+          <option value="1800" selected>30 minutes</option>
+          <option value="2400">40 minutes</option>
+          <option value="3000">50 minutes</option>
+          <option value="3600">60 minutes</option>
+        </select>
+      </div>
+      <div>
+        <label for="minReps">Min Reps:</label>
+        <select id="minReps">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+        </select>
+
+        <label for="maxReps">Max Reps:</label>
+        <select id="maxReps">
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+          <option value="35">35</option>
+          <option value="40">40</option>
+          <option value="45">45</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="exercise">Press Start to begin</div>
+    <div>
+      <button class="start" id="startButton" onclick="startTimer()">Start</button>
+      <button class="pause" id="pauseButton" onclick="togglePause()" style="display: none;">Pause</button>
+      <button class="stop" id="stopButton" onclick="stopTimer()" style="display: none;">Stop</button>
+      <button class="reset" id="resetButton" onclick="resetTimer()" style="display: none;">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval;
+    let isRunning = false;
+    let isPaused = false;
+    let timeRemaining = 0;
+    let repCounts = {
+      "Push-ups": 0,
+      "Sit-ups": 0,
+      "Squats": 0
+    };
+    let currentExercise = "";
+    let currentReps = 0;
+    let round = 0;
+
+    function getRandomExercise() {
+      const exercises = ["Push-ups", "Sit-ups", "Squats"];
+      return exercises[Math.floor(Math.random() * exercises.length)];
+    }
+
+    function getRandomReps(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function getNewExercise() {
+      const min = parseInt(document.getElementById("minReps").value);
+      const max = parseInt(document.getElementById("maxReps").value);
+      currentExercise = getRandomExercise();
+      currentReps = getRandomReps(min, max);
+      repCounts[currentExercise] += currentReps;
+      round++;
+      document.getElementById("roundCounter").textContent = `Round ${round}:`;
+      document.getElementById("exercise").textContent = `${currentExercise}: ${currentReps} reps`;
+      document.getElementById("exercise").classList.add("alert");
+      setTimeout(() => {
+        document.getElementById("exercise").classList.remove("alert");
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+      const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+      document.getElementById("timer").textContent = `Time Remaining for Next Exercise: ${minutes}:${seconds}`;
+    }
+
+    function startTimer() {
+      if (isRunning || isPaused) return;
+      isRunning = true;
+      round = 0;
+      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0 };
+      document.getElementById("settings").style.display = "none";
+      document.getElementById("startButton").style.display = "none";
+      document.getElementById("pauseButton").style.display = "inline-block";
+      document.getElementById("stopButton").style.display = "inline-block";
+      document.getElementById("resetButton").style.display = "none";
+      getNewExercise();
+      const interval = parseInt(document.getElementById("intervalSelect").value);
+      timeRemaining = interval;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        if (!isPaused && isRunning) {
+          timeRemaining--;
+          updateTimerDisplay();
+          if (timeRemaining <= 0) {
+            getNewExercise();
+            timeRemaining = interval;
+          }
+        }
+      }, 1000);
+    }
+
+    function togglePause() {
+      if (!isRunning) return;
+      isPaused = !isPaused;
+      document.getElementById("pauseButton").textContent = isPaused ? "Resume" : "Pause";
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      isPaused = false;
+      document.getElementById("pauseButton").style.display = "none";
+      document.getElementById("stopButton").style.display = "none";
+      document.getElementById("resetButton").style.display = "inline-block";
+      document.getElementById("startButton").style.display = "none";
+      document.getElementById("settings").style.display = "none";
+      document.getElementById("roundCounter").textContent = "";
+
+      let summary = `Workout Completed, Great Job!!\n\nTotal Rounds: ${round}\n`;
+      for (const [exercise, count] of Object.entries(repCounts)) {
+        summary += `${exercise}: ${count} reps\n`;
+      }
+      document.getElementById("exercise").textContent = summary;
+      document.getElementById("timer").textContent = "";
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      isPaused = false;
+      timeRemaining = 0;
+      round = 0;
+      repCounts = { "Push-ups": 0, "Sit-ups": 0, "Squats": 0 };
+
+      document.getElementById("settings").style.display = "block";
+      document.getElementById("startButton").style.display = "inline-block";
+      document.getElementById("pauseButton").style.display = "none";
+      document.getElementById("stopButton").style.display = "none";
+      document.getElementById("resetButton").style.display = "none";
+      document.getElementById("exercise").textContent = "Press Start to begin";
+      document.getElementById("roundCounter").textContent = "";
+      document.getElementById("timer").textContent = "";
+    }
+  </script>
+</body>
+</html>
